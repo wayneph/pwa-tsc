@@ -1,9 +1,6 @@
 <?php namespace presentation;
 $file=$_SERVER['DOCUMENT_ROOT']."/include/appControl/Bl.php";
 include_once($file);
-$file=$_SERVER['DOCUMENT_ROOT']."/include/pl.php";
-include_once($file);
-use presentationLogic\Pl as PL;
 use BL\BL;
 class Present extends BL
 {
@@ -13,9 +10,6 @@ class Present extends BL
         $this->html=file_get_contents("templates/hddr.html");
         $this->html.=file_get_contents("templates/apiErr.html");
         $this->html.=file_get_contents("templates/footer.html");
-
-
-
         //parent::executeAddedCalls();
         /*  SET by action
         $this->pageArray['PostSwitchElements']['specificHeader']="<b>Logout</b> -or <b>Reset</b> success";
@@ -62,7 +56,7 @@ class Present extends BL
         $dBug="";
         $this->html=str_replace("###debugger###",$dBug,$this->html);
         echo($this->html);
-        //parent::writeLogs();
+        parent::writeLogs();
     }
 }
 new Present;
