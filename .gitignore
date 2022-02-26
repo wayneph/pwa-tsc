@@ -8,8 +8,8 @@ node_modules/
 dist/
 
 # WHP pages
-page.log
-
+.env
+.bac
 
 # Compiled Python bytecode
 *.py[cod]
