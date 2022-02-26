@@ -1,0 +1,913 @@
+<?php namespace BL;
+require 'vendor/autoload.php';
+use GuzzleHttp\Client as GUZ;
+use GuzzleHttp\Exception\ClientException;
+
+use function GuzzleHttp\Psr7\_parse_message;
+
+class BL
+{
+    /* privates*/
+    private $apiArray;
+    private $myName="BL";
+    /*control vars */
+    public $pageArray;
+    public $apiUserArray;
+    public $infoPathArray=array();
+    public $addedMenu=array();
+    public $html;
+    public $addedAPIcalls=array();
+    public $ToDo=array();
+    public function __construct()
+    {
+        $this->getEnv();
+    }
+    
+    private function apiEchoError(array $response, string $method)
+    {
+        echo("<br>API error:<b>$method</b>");
+        echo("<br>Array:response(".__LINE__."({$this->myName}))<br><pre>"); print_r($response); echo("</pre><hr>");
+        echo("<br>Array:apiArray(".__LINE__."({$this->myName}))<br><pre>"); print_r($this->apiArray); echo("</pre><hr>");
+        echo("<br>Array:pageArray(".__LINE__."({$this->myName}))<br><pre>"); print_r($this->pageArray); echo("</pre><hr>");
+        exit();
+    }
+
+    private function apiFindUser($userHash)
+    {
+        $this->apiArray['apiFindUser']['start']=time();
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        $this->apiArray['apiFindUser']['url']=$this->apiArray['userUri']."/find/$userHash";
+        try{
+            $r = $client->request("GET", $this->apiArray['apiFindUser']['url'],['http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['dBugAdded']['inBody'] = $this->apiArray['entitiesUri']."/entityTypes}";
+            $response['dBugAdded']['inHeader'] = $this->apiArray["headersIn"];
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+            $this->apiEchoError($response,__METHOD__);
+        }
+        $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
+        $this->apiArray['apiFindUser']['end']=time();
+        return $response;
+    }
+
+    private function apiGetAllEntityTypes()
+    {
+        $this->apiArray['apiGetAllEntityTypes']['start']=time();
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        try{
+            $r = $client->request("GET", $this->apiArray['entitiesUri']."/entityTypes",['http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['dBugAdded']['inBody'] = $this->apiArray['entitiesUri']."/entityTypes}";
+            $response['dBugAdded']['inHeader'] = $this->apiArray["headersIn"];
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+            $this->apiEchoError($response,__METHOD__);
+        }
+        $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
+        $this->apiArray['apiGetAllEntityTypes']['end']=time();
+        return $response;
+    }
+
+    private function apiGetEntitiesForType(array $pathInfo)
+    {
+        $this->apiArray['apiGetAllEntityTypes']=time();
+        $slug=$pathInfo['slug'];
+        $page=$pathInfo['page'];
+        $size=$pathInfo['size'];
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        try{
+            $r = $client->request("GET", $this->apiArray['entitiesUri']."/type/$slug/?page=$page&size=$size",['http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['dBugAdded']['inBody'] = $this->apiArray['entitiesUri']."/entityTypes}";
+            $response['dBugAdded']['inHeader'] = $this->apiArray["headersIn"];
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+            $this->apiEchoError($response,__METHOD__);
+        }
+        $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
+        $this->apiArray['apiGetAllEntityTypes']=time();
+        return $response;
+    }
+
+    private function apiGetMessages(string $pagination)
+    {
+        $this->apiArray['apiGetMessages']=time();
+        $slug=getenv('siteSlug');
+        $arrayPagination=explode("/",$pagination);
+        $page=$arrayPagination[0];
+        $size=$arrayPagination[1];
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        try{
+            $r = $client->request("GET", $this->apiArray['userUri']."/comms/$slug/?page=$page&size=$size",['http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['dBugAdded']['inBody'] = $this->apiArray['entitiesUri']."/entityTypes}";
+            $response['dBugAdded']['inHeader'] = $this->apiArray["headersIn"];
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+            $this->apiEchoError($response,__METHOD__);
+        }
+        $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
+        $this->apiArray['apiGetMessages']=time();
+        return $response;
+    }
+
+    private function apiRegisterSiteUser(array $response)
+    {
+        $this->apiArray['registerAPIuserStart']=time();
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        $commitArray['status']=1; //1=takeAction
+        $commitArray['action_slug']="registerUser";
+        $bodyInJson=json_encode($commitArray);
+        try{
+            $r = $client->request("PATCH", $this->apiArray['userUri']."/comms/{$response['codeThis']}",['body' => $bodyInJson, 'http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['dBugAdded']['inBody'] = $bodyInJson;
+            $response['dBugAdded']['inHeader'] = $this->apiArray["headersIn"];
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+            $this->apiEchoError($response,__METHOD__);
+        }
+        $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
+        $this->apiArray['registerAPIuserEnd']=time();
+        return $response;
+    }
+
+    private function apiRegisterAPIuser(array $response)
+    {
+        $this->apiArray['registerAPIuserStart']=time();
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        /*  {
+                [url] => /switch.php/fed33392d3a48aa149a87a38b875ba4af061e144187058db2387337ba1e0b0249ba90f55b2ba2521rg
+                [function] => rg
+                [codeAll] => fed33392d3a48aa149a87a38b875ba4af061e144187058db2387337ba1e0b0249ba90f55b2ba2521rg
+                [codeThis] => f061e144187058db
+                /////
+            {
+                "status":1,
+                "action_slug":"registerUser"
+            }
+            }
+        */
+        $commitArray['status']=1; //1=takeAction
+        $commitArray['action_slug']="registerUser";
+        $bodyInJson=json_encode($commitArray);
+        try{
+            $r = $client->request("PATCH", $this->apiArray['userUri']."/comms/{$response['codeThis']}",['body' => $bodyInJson, 'http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['dBugAdded']['inBody'] = $bodyInJson;
+            $response['dBugAdded']['inHeader'] = $this->apiArray["headersIn"];
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+            $this->apiEchoError($response,__METHOD__);
+        }
+        $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
+        $this->apiArray['registerAPIuserEnd']=time();
+        return $response;
+    }
+
+    public function buildEntityTypesMenu(string $type) //waynep
+    {
+        $this->getEntityTypes($type);
+        $array=$this->pageArray['getEntityTypes'];
+        $menuLeader=getenv('siteMenuLeader');
+        $this->addedMenu="\n<li><a href=\"listEntityTypes.php\"><span>$menuLeader<strong>&nbsp;&isin;</strong></span></a>\n<ul>\n";
+        for($a=0;$a<count($array);$a++){
+            $this->pageArray['getEntityTypes'][$a]['linkCode']=$array[$a]['slug']."/{$array[$a]['slug']}/1/5";
+            $this->addedMenu.="\n<li><a href=\"showEntitiesForType.php/{$array[$a]['slug']}/1/5\">&#8714;&nbsp;{$array[$a]['selector']}</a></li>\n";
+        }
+        $this->addedMenu.="\n</ul>\n</li>\n";
+    }
+
+    public function deEncrypt(string $data)
+    {
+        for ($i = 1000; $i < 1010; $i++) {
+            $extract=md5($i);
+            $data=str_replace($extract,"",$data);
+        }
+        return $data;
+    }
+
+    function enCryp(string $data, $leaveData=0)
+    {
+        $randPos1=rand(1000,1007);
+        $randPos2=$randPos1+1;
+        $randPos3=$randPos1+2;
+        if($leaveData==0){
+            $data=md5($data);
+        }
+        $x=rand(3,5);
+        if(($x % 2) ==0)
+        {
+            return md5($randPos2).$data.md5($randPos3);
+        }
+        if(($x % 3) ==0)
+        {
+            return md5($randPos3).md5($randPos1).$data;
+        }
+        if(($x % 5) ==0)
+        {
+            return md5($randPos2).md5($randPos3).$data.md5($randPos1);
+        }
+        return md5($randPos3).md5($randPos1).$data.md5($randPos2);
+    }
+    public function evalCookie()
+    {
+        $this->pageArray['cookie']=array();
+        $cookieName=getenv("siteSlug")."-pwa";
+        if(isset($_COOKIE[$cookieName]))
+        {
+            $this->pageArray['cookie']=json_decode($_COOKIE[$cookieName], true);
+        }
+        return;
+    }
+
+    public function evalInputs() //waynep
+    {
+        $this->pageArray['inputs']['type']='UnKnown';
+        if(isset($_SERVER['PATH_INFO'])){
+            $this->pageArray['inputs']['type']='get';
+            $this->pageArray['inputs']['urlAdded']=trim($_SERVER['PATH_INFO']);
+            $this->pageArray['inputs']['function']=substr($this->pageArray['inputs']['urlAdded'],-2);
+            //$this->evalGets();
+            //$this->addedAPIcalls['postSwitchGets']=$this->pageArray['inputs'];
+            return "get";
+        }
+        if(isset($_POST)){
+            $this->pageArray['inputs']['type']='post';
+            $posts=$_POST;unset($_POST);
+            if(!isset($posts['pstSource'])){
+                $posts['pstSource']="No posting Source (pstSource)|";
+            }
+            if(!isset($posts['pstType'])){
+                $posts['pstType']="No posting Origen";
+            }
+            $posts['pstMailValid']=1;
+            if(!isset($posts['pstMail'])){
+                $posts['pstMail']="Not set";
+                $posts['pstMailValid']=0;
+            }
+            if (!filter_var($posts['pstMail'], FILTER_VALIDATE_EMAIL)) {
+                if(substr($posts['pstMail'],0,5)!='eMAil'){
+                    $posts['pstMail']="Invalid email captured";
+                    $posts['pstMailValid']=0;
+                }
+            }
+            $posts['eMailDisplay']=$this->setEmailDisplay($posts['pstMail']);
+            $posts['date']=date("D d M y");
+            $category="<u>Regarding:</u>&rarr;<b>".$posts['pstCategory']."</b>";
+            if(strlen($posts['pstMessage'])<2){
+                $posts['pstMessage']="No Message";
+            }
+            $posts['message']=$posts['pstMessage']."\n\nFrom\n".$posts['message']=$posts['pstFrom'];
+            $posts['topic']="UnKnown (pstType)";
+            if(isset($posts['pstType'])){
+                $posts['topic']=$category." on ".$posts['pstType'];
+            }
+            $posts['response']="";
+            $posts['response'].="<br><br>Thank you <b>{$posts['pstFrom']}</b> for the <b>touch !</b><br>";
+            if(isset($posts['pstSource'])){
+                $posts['response'].="<hr><br>Use the menu or return to <a href=\"{$posts['pstSource']}.php\"> {$posts['pstSource']}</a>.";
+            }
+            $posts['response'].="<br>An email was attempted to an address like::<b>{$posts['eMailDisplay']}</b>::<br>";
+            if(strlen($posts['pstSource'])<2){
+                $posts['response']="Please Use the menu to navigate to the desired section.";
+            }
+            $this->pageArray['inputs']['posts']=$posts;
+            $this->pageArray['inputs']['posts']['cBlLine']=__LINE__;
+            $this->writeCookie($this->pageArray['inputs']['posts']);
+            $this->evalPosts();
+            return;
+        }
+    }
+
+    private function evalPosts()
+    {
+        $toEval=$this->pageArray['inputs']['posts'];
+        $this->pageArray['postSwitchElements']['date']=date("D d M Y");
+        //echo("<br> In here ".__LINE__);
+        $this->evalCookie();
+        //echo("<br> In here ".__LINE__);
+        // if(!isset($cookieArray['cAuth'])){
+        //     $cookieArray['cAuth']=0;
+        // }
+        // if($cookieArray['cAuth']==1){ // authenticated
+        //     ///waynep
+        // }
+        // if($cookieArray['cAuth']<1){ // authenticated
+        //     ///waynep
+        // }
+        if(isset($this->pageArray['cookie']['cSiteValidation'])){
+            //echo("<br> In here ".__LINE__);
+            if($this->pageArray['cookie']['cSiteValidation']==1){
+                //echo("<br> In here ".__LINE__);
+                $this->pageArray['postSwitchElements']['specificHeader']="<b>Registered eMail</b>";
+                $this->pageArray['postSwitchElements']['topic']='Authentication';
+                $this->pageArray['postSwitchElements']['message']='Authenticated - Thank you &nbsp;&nbsp;&#128524;';
+                $this->pageArray['postSwitchElements']['response']='Navigate Home &amp retry please <a href ="index.php">here</a>.';
+                $this->pageArray['postSwitchElements']['heading']='Touch Acknowledged';
+                $this->pageArray['setSkunkMsg']=$this->postTouch($toEval);
+                $this->pageArray['mailLog']=$this->postTouchMail($toEval,$this->pageArray['setSkunkMsg']['body']);
+                return;
+            }
+            //valid user For Site
+        }
+        // if (filter_var($value['pstMail'], FILTER_VALIDATE_EMAIL)) {
+        //     $this->pageArray['postSwitchElements']['specificHeader']="<b>eMail</b> address required";
+        //     $this->pageArray['postSwitchElements']['topic']='Authentication';
+        //     $this->pageArray['postSwitchElements']['message']='Authenticated email Not set - Thank you &nbsp;&nbsp;&#128524;';
+        //     $this->pageArray['postSwitchElements']['response']='Navigate Home &amp retry please <a href =\"index.php\">here</a>.';
+        //     $this->pageArray['postSwitchElements']['heading']='Response request without eMail address';
+        // }
+        // $cookieArray['email']=$value['pstMail'];
+        // $cookieArray['userName']=$value['pstFrom'];
+        // $cookieArray['setOnLine']=__LINE__;
+        // $this->writeCookie($cookieArray);
+        // $this->pageArray[$key]=$this->postTouch($value);   // sends the mail
+        // if($this->pageArray[$key]['status']==201){
+
+        // }
+        // $this->pageArray['postSwitchElements']['specificHeader']="FUBAR";
+        // $this->pageArray['postSwitchElements']['topic']='FUBAR';
+        // $this->pageArray['postSwitchElements']['message']='FUBAR';
+        // $this->pageArray['postSwitchElements']['response']='Navigate Home &amp retry please <a href =\"index.php\">here</a>.';
+        // $this->pageArray['postSwitchElements']['heading']='FUBAR';
+    }
+    public function executeAddedCalls()
+    {
+        foreach($this->addedAPIcalls as $key => $value) {
+            switch ($key) {
+                case 'getMessages':
+                    $this->pageArray[$key]=$this->getPostMessages($value);
+                    $this->buildEntityTypesMenu($this->pageArray[$key]);
+                    break;
+                case 'getEntitiesForType':
+                    $this->pageArray[$key]=$this->getEntitiesForType($this->infoPathArray);
+                    $this->buildEntityTypesMenu($this->pageArray[$key]);
+                    break;
+                case 'postSwitchGets':
+                    if($value['function']=='rg'){ //i.e. register user from email link  // registerUser
+                        $this->pageArray['postSwitchElements']['date']=date("D d M Y");
+                        $outArray[$key]=$this->apiRegisterSiteUser($value);
+                        if($outArray[$key]['status']==202){// i.e. success
+                            $this->pageArray[$key]['mailAdmin']=$this->sendMailAdmin("Registration Request- skunks.Messages",$outArray);
+                            $this->pageArray[$key]['mailAdmin']['outArray']=$outArray[$key];
+                        }
+                        else{
+                            $this->pageArray[$key]['mailAdmin']=$this->sendMailAdmin("Registration Request Failure - skunks.Messages",$outArray);
+                        }
+                        $this->pageArray['postSwitchElements']['specificHeader']="<b>Touch</b> response!";
+                        $this->pageArray['postSwitchElements']['topic']='Registration Request';
+                        $this->pageArray['postSwitchElements']['message']='email Link Clicked - Thank you &nbsp;&nbsp;&#128524;';
+                        $this->pageArray['postSwitchElements']['response']='Your <b>Request</b> has been logged..<br>We will respond to your <b>eMail address</b>';
+                        $this->pageArray['postSwitchElements']['heading']='Response To Message';
+                    }
+                    if($value['function']=='lo'){ //i.e. LogOut // i.e. destroy cookie
+                        $cValue['unset']="Y";
+                        $cValue['calledLine']=__LINE__;
+                        $this->writeCookie($cValue);
+                        $this->pageArray['postSwitchElements']['date']=date("D d M Y");
+                        $this->pageArray['postSwitchElements']['specificHeader']="<b>Logout</b> -or <b>Reset</b> success";
+                        $this->pageArray['postSwitchElements']['topic']='Authentication';
+                        $this->pageArray['postSwitchElements']['message']='Authenticated email un-Linked - Thank you &nbsp;&nbsp;&#128524;';
+                        $this->pageArray['postSwitchElements']['response']='Navigate Home <a href ="index.php">here</a>.';
+                        $this->pageArray['postSwitchElements']['heading']='Response To un-Link eMail address';
+                    }
+                    break;
+                //case 'postTouch': //waynep
+                    // $this->pageArray['postSwitchElements']['date']=date("D d M Y");
+                    // $cookieArray=$this->evalCookie();
+                    // if(!isset($cookieArray['cAuth'])){
+                    //     $cookieArray['cAuth']=0;
+                    // }
+                    // if($cookieArray['cAuth']==1){ // authenticated
+                    //     ///waynep
+                    // }
+                    // if($cookieArray['cAuth']<1){ // authenticated
+                    //     ///waynep
+                    // }
+                    // if((strlen($_SESSION['us'])>50) AND ($cookieArray[''])){ /*hash is set*/
+                    //     ##### if $valus['pstCategory']=='Login'
+                    //     $this->pageArray['todo'][]="Attempt Login::".__LINE__;
+                    //     $this->pageArray['postSwitchElements']['specificHeader']="<b>Logout</b> -or <b>Reset</b> success";
+                    //     $this->pageArray['postSwitchElements']['topic']='xxAuthentication';
+                    //     $this->pageArray['postSwitchElements']['message']='xxAuthenticated email un-Linked - Thank you &nbsp;&nbsp;&#128524;';
+                    //     $this->pageArray['postSwitchElements']['response']='xxNavigate Home <a href =\"index.php\">here</a>.';
+                    //     $this->pageArray['postSwitchElements']['heading']='xxResponse To un-Link eMail address';
+                    // }
+                    // if (filter_var($value['pstMail'], FILTER_VALIDATE_EMAIL)) {
+                    //     $this->pageArray['postSwitchElements']['specificHeader']="<b>eMail</b> address required";
+                    //     $this->pageArray['postSwitchElements']['topic']='Authentication';
+                    //     $this->pageArray['postSwitchElements']['message']='Authenticated email Not set - Thank you &nbsp;&nbsp;&#128524;';
+                    //     $this->pageArray['postSwitchElements']['response']='Navigate Home &amp retry please <a href =\"index.php\">here</a>.';
+                    //     $this->pageArray['postSwitchElements']['heading']='Response request without eMail address';
+                    // }
+                    // $cookieArray['email']=$value['pstMail'];
+                    // $cookieArray['userName']=$value['pstFrom'];
+                    // $cookieArray['setOnLine']=__LINE__;
+                    // $this->writeCookie($cookieArray);
+                    // $this->pageArray[$key]=$this->postTouch($value);   // sends the mail
+                    // if($this->pageArray[$key]['status']==201){
+                    //     $this->pageArray['postSwitchElements']['specificHeader']="<b>eMail</b> address seems valid - checking registration";
+                    //     $this->pageArray['postSwitchElements']['topic']='Authentication';
+                    //     $this->pageArray['postSwitchElements']['message']='Authenticated email Not set - Thank you &nbsp;&nbsp;&#128524;';
+                    //     $this->pageArray['postSwitchElements']['response']='Navigate Home &amp retry please <a href =\"index.php\">here</a>.';
+                    //     $this->pageArray['postSwitchElements']['heading']='Response request without eMail address';
+                    //     $this->pageArray[$key]['mailLog']=$this->postTouchMail($value,$this->pageArray[$key]['body']);
+                    // }
+                    // $this->pageArray['postSwitchElements']['specificHeader']="FUBAR";
+                    // $this->pageArray['postSwitchElements']['topic']='FUBAR';
+                    // $this->pageArray['postSwitchElements']['message']='FUBAR';
+                    // $this->pageArray['postSwitchElements']['response']='Navigate Home &amp retry please <a href =\"index.php\">here</a>.';
+                    // $this->pageArray['postSwitchElements']['heading']='FUBAR';
+                    //
+                    //break;
+
+            }
+        }
+    }
+
+    private function getEntitiesForType(array $pathInfo)
+    {
+        $apiArray=$this->apiGetEntitiesForType($pathInfo);
+        if($apiArray['status']!==200){
+            return null;
+        }
+        else
+        {
+            $apiDataArray=json_decode($apiArray['body'],true);
+            return $apiDataArray;
+        }
+    }
+
+    private function getEntityTypes(string $value) //waynep
+    {
+        if($value=='all'){  //get all types
+            $apiArray=$this->apiGetAllEntityTypes();
+            if($apiArray['status']!==200){
+                $this->pageArray['getEntityTypes']=array();
+                return;
+            }
+            $apiDataArray=json_decode($apiArray['body'],true);
+            $this->pageArray['getEntityTypes']=$apiDataArray['data'];
+            return;
+        }
+    }
+
+public function getEnv(){
+    $file=$_SERVER['DOCUMENT_ROOT']."/.env";
+    $contents=file_get_contents($file);
+    $arrayContents=explode("\n",$contents);
+    foreach ($arrayContents as $key => $value) {
+        $value=trim($value);
+        $findEq=strpos($value,"=");
+        if($findEq>0){
+            $lineItemArray=explode("=",$value);
+            $putEnvStr=trim($lineItemArray[0])."=".trim($lineItemArray[1]);
+            putenv($putEnvStr);
+        }
+    }
+    date_default_timezone_set(getenv('tz'));
+    return;
+}
+
+    private function apiGetOwnerUser()
+    {
+        $this->apiArray['getOwnerUserStart']=time();
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        $response['callWas']=__METHOD__;
+        try{
+            $r = $client->request("GET", $this->apiArray['userUri']."/show", ['http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+        }
+        $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
+        $this->apiArray['getOwnerUserEnd']=time();
+        return $response;
+    }
+    public function getPage(string $pageSlug)                               //k8s
+    {
+        $this->apiArray['getPageStartTime']=time();
+        $this->apiArray['caller']=getenv("api-host");
+        $this->apiArray['siteSlug']=getenv("siteSlug");
+        $this->apiArray['pageSlug']=$pageSlug;
+        $this->apiArray['host']=getenv("api-host");
+        $this->apiArray['headersIn']['api-key']=getenv("api-key");
+        $this->apiArray['userUri']=$this->apiArray['host'].getenv("user-api-area");
+        $this->apiArray['sitesUri']=$this->apiArray['host'].getenv("sites-api-area");
+        $this->apiArray['entitiesUri']=$this->apiArray['host'].getenv("entities-api-area");
+        $this->apiArray['entitiesInvocation']=$this->apiArray['host'].getenv("entities-api-area");
+        $this->apiArray['mailUri']=$this->apiArray['host'].getenv("mail-api-area");
+        $this->apiArray['userName']=getenv("api-user-name");
+        $this->apiArray['userPin']=getenv("api-user-pin");
+        $loginResponse=$this->apiLogInOwner();
+        $this->apiArray['headersIn']['usageToken']=$loginResponse['headersOut']['token'][0];
+        $ownerUserArray=$this->apiGetOwnerUser();
+        $this->apiArray['headersIn']['usageToken']=$ownerUserArray['headersOut']['token'][0];
+        $this->apiUserArray=json_decode($ownerUserArray['body'],true);
+        $this->apiUserArray=$this->apiUserArray['data'];
+        $page=$this->apiGetSitePageBySlug();
+        $this->pageArray=json_decode($page['body'],true);
+        return;
+    }
+    // public function getPageAddedCalls()
+    // {
+    //     if(count($this->addedAPIcalls)>0){
+    //         $addedAPICallsArray=$this->executeAddedCalls();
+    //         $this->pageArray['addedCallsArray'][]=$addedAPICallsArray;
+    //     }
+    // }
+    public function getPostMessages(string $pagination)                                       //k8s
+    {
+        $apiArray=$this->apiGetMessages($pagination);
+        $apiDataArray=json_decode($apiArray['body'],true);
+        return $apiDataArray;
+    }
+    private function apiGetSitePageBySlug()
+    {
+        $this->apiArray['getPageStart']=time();
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        try{
+            $r = $client->request("GET", $this->apiArray['sitesUri']."/site/{$this->apiArray['siteSlug']}/{$this->apiArray['pageSlug']}", ['http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+        }
+        $this->apiArray['getPageEnd']=time();
+        return $response;
+    }
+    public function loginUser() // only of isset cHash
+    {
+        if(!isset($this->pageArray['cookie']['cHash'])){
+            $this->pageArray['loginUser']['apiStatus']=0;
+            return;
+        }
+        $apiReturn=$this->apiFindUser($this->pageArray['cookie']['cHash']);
+        $this->pageArray['loginUser']['apiStatus']=$apiReturn['status'];
+        if($apiReturn['status']!=200){
+            $this->pageArray['loginUser']['apiStatus']=$apiReturn['status'];
+            return;
+        }
+        $this->pageArray['loginUser']['data']=json_decode($apiReturn['body'],true);
+        if(($this->pageArray['loginUser']['data']['data']['status']<4) AND ($this->pageArray['loginUser']['data']['data']['status']>0)){
+            //1=skunks access
+            //2=PWA only accesss
+            $jsonArray=json_decode($this->pageArray['loginUser']['data']['data']['action_json'],true);
+            $findFor=getenv('siteSlug');
+            $accessArray=array();
+            for($i=0;$i<count($jsonArray);$i++){
+                if($jsonArray[$i]['slug']==$findFor){
+                    $accessArray=$jsonArray[$i];
+                    break;
+                }
+            }
+            $value['cUserName']=$this->pageArray['loginUser']['data']['data']['fullname'];
+            $value['cUserStatus']=$this->pageArray['loginUser']['data']['data']['status'];
+            // echo("<br>Array:accessArray(".__LINE__."({$this->myName}))<br><pre>"); print_r($accessArray); echo("</pre><hr>");
+            // exit();
+            if(count($accessArray)>0){
+                $value['cSiteAccess']=$accessArray['access'];
+                $value['cSiteValidation']=$accessArray['validate'];
+            }
+            $value['calledLine']=__LINE__;
+            $this->writeCookie($value);
+        }
+    }
+    private function apiLogInOwner()
+    {
+        $this->apiArray['login_start']=time();
+        $loginJsonArray['user_id']=$this->apiArray['userName'];
+        $loginJsonArray['pin']=$this->apiArray['userPin'];
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        $bodyInJson=json_encode($loginJsonArray);
+        try{
+            $r = $client->request("POST", $this->apiArray['userUri']."/login", [
+                'body' => $bodyInJson,'http_errors' => true
+            ]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+            //$this->pushToErrorPage(__METHOD__);
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+            $this->pushToErrorPage(__METHOD__);
+        }
+        $this->apiArray['login_end']=time();
+        return $response;
+    }
+
+    private function pushToErrorPage(string $method)
+    {
+        $output="?method=".$method;
+        $fl="api.log";
+        $contents=print_r($this->apiArray,true);
+        file_put_contents($fl,$contents,FILE_APPEND);
+        header("Location: apiErr.php",301);
+        exit();
+    }
+
+    private function postTouchMail(array $touchArray,string $jsonReg)
+    {
+        $checkArray=json_decode($jsonReg, true);
+        // echo("<br>Array:checkArray(".__LINE__."({$this->myName}))<br><pre>"); print_r($checkArray); echo("</pre><hr>");
+        // exit();
+        $linkBits=rand(1000,9999)."rg";
+        if(isset($checkArray['data']['comms_ref'])){
+            $linkBits=substr($checkArray['data']['comms_ref'],0,6);
+            $linkBits.="rg"; //used for register url key
+        }
+        $from=getenv('api-user-name');
+        $site=getenv('siteName');
+        $linkBack=getenv('domain');
+        $inArray['to']=$touchArray['pstMail'];
+        $inArray['to_person']=$touchArray['pstFrom'];
+        $inArray['subject']=$touchArray['pstType']."-".$touchArray['pstType'];
+        $inArray['body']="
+            Welcome to {$site} {$touchArray['pstFrom']},
+            <br><br>
+            Thank you for the touch!. This is your reference: <b>{$linkBits}</b>.
+            <br><br>
+            Your Touch Message:
+            <br><br>
+            <b>{$touchArray['pstMessage']}</b>
+            <br><br>
+            Regards,
+            <br><br>
+            $from
+            <br>";
+        $this->apiArray['postMailStart']=time();
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        $bodyInJson=json_encode($inArray);
+        try{
+            $r = $client->request("POST", $this->apiArray['mailUri']."/send",['body' => $bodyInJson, 'http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body']['error'][] = "error:\n";
+            $response['body']['error'][] = $bodyInJson;
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+        }
+        $this->apiArray['postMailEnd']=time();
+        return $response;
+    }
+    private function sendMailAdmin(string $msg, array $addMessageArray)                                    //k8s
+    {
+        if(count($addMessageArray)){
+            $msg.="<pre>";
+            $msg.=print_r($addMessageArray,true);
+            $msg.="</pre>";
+        }
+        $from=getenv('api-user-name');
+        $site=getenv('siteSlug');
+        $inArray['to']=getenv('adminMail');
+        $inArray['to_person']=$from;
+        $inArray['subject']="AdminMail - $site";
+        $inArray['body']="
+            {$site} message for {$from},
+            <br><br>
+            {$msg}";
+        $this->apiArray['postMailAdmin']=time();
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        $bodyInJson=json_encode($inArray);
+        try{
+            $r = $client->request("POST", $this->apiArray['mailUri']."/send",['body' => $bodyInJson, 'http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+        }
+        $this->apiArray['postMailAdmin']=time();
+        return $response;
+    }
+    private function postTouch(array $touchArray) //waynep
+    {
+        $this->apiArray['postTouchStart']=time();
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        $topic=getenv('siteSlug')."-".$touchArray['pstCategory'];
+        $this->apiArray['postTouchStart']=time();
+        $commitArray['site_slug']=getenv('siteSlug');
+        $commitArray['comms_by_slug']=$touchArray['pstMail'];
+        $commitArray['source_slug']=$touchArray['pstSource'];
+        $commitArray['for_slug']=getenv('api-user-name');
+        $commitArray['comms_log']="\nTouch Created @ ".date("Y-n-d H:i:s");;
+        $commitArray['comms_topic']=$topic;
+        $commitArray['comms_text']=$touchArray['pstMessage'];
+        $bodyInJson=json_encode($commitArray);
+        try{
+            $r = $client->request("POST", $this->apiArray['userUri']."/comms",['body' => $bodyInJson, 'http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xMethodCode']=__LINE__;
+        }
+        $this->apiArray['postTouchEnd']=time();
+        return $response;
+    }
+    public function replacePageElements()
+    {
+        $elementsArray=$this->pageArray['data']['elements'];
+        usort($elementsArray, function($a, $b) {
+            return $a['seq'] <=> $b['seq'];
+        });
+        for($e=0;$e<count($elementsArray);$e++){
+            $replaceMe=$elementsArray[$e]['position_name'];
+            if($elementsArray[$e]['conditional']==0){
+                $replaceWith=$elementsArray[$e]['element_text'];
+            }
+            if($elementsArray[$e]['conditional']==1){
+                $caseArray=explode("|",$elementsArray[$e]['element_text']);
+                switch ($caseArray[0]) {
+                    case "rand":
+                        $rangeSplit=explode("~",$caseArray[1]);
+                        $replaceWith=rand((int)$rangeSplit[0],(int)$rangeSplit[1]);
+                        break;
+                    case "arrayLimitedOutput":
+                        $template=$caseArray[3];
+                        $replaceWith="";
+                        for($r=0;$r<$caseArray[2];$r++){
+                            $replaceArray=$this->pageArray['getMessages']['data'][$r];  //buggggggg
+                            $replaceWith.=$template;
+                            foreach($replaceArray as $key => $value) {
+                                $replaceWith=str_replace("###$key###",$value,$replaceWith);
+                            }
+                        }
+                        break;
+                    default:
+                        $replaceWith="FUBAR";
+                        break;
+                }
+            }
+            $this->html=str_replace("###$replaceMe###",$replaceWith,$this->html);
+        }
+    }
+    public function replaceSiteStatics()
+    {
+        $staticsArray=$this->pageArray['data']['static'];
+        for($e=0;$e<count($staticsArray);$e++){
+            $replaceMe=$staticsArray[$e]['position_name'];
+            $replaceWith=$staticsArray[$e]['ht'];
+            $this->html=str_replace("###$replaceMe###",$replaceWith,$this->html);
+        }
+    }
+    private function writeCookie(array $values)//waynep
+    {
+        $wantCookieArray=array('cEmail','cHash','cUserName','cUserStatus','cSiteAccess','cSiteValidation');
+        $cookieName=getenv("siteSlug")."-pwa";
+        $cookieValues=array();
+        if(isset($_COOKIE[$cookieName]))
+        {
+            $cookieValues=json_decode($_COOKIE[$cookieName], true);
+        }
+        for($n=0;$n<count($wantCookieArray);$n++){
+            if(isset($values[$wantCookieArray[$n]])){
+                $cookieValues[$wantCookieArray[$n]]=$values[$wantCookieArray[$n]];
+            }
+        }
+        $cookieName=getenv("siteSlug")."-pwa";
+        $cookieValues['cCreatedAt']=date("Y-m-d H:i:s");
+        if(isset($values['pstFrom'])){  //we have inputs
+            if(isset($values['pstMail'])){
+                if($values['pstMailValid']==1){
+                    $cookieValues['cEmail']=$values['pstMail'];
+                    $cookieValues['cHash']=$this->enCryp($values['pstMail']);
+                }
+            }
+            if(isset($valuesArray['pstFrom'])){
+                $cookieValues['cUserName']=$values['pstFrom'];
+            }
+        }
+        setcookie($cookieName, json_encode($cookieValues), time() + (3* 86400 * 30), "/");
+        return;
+    }
+    public function setDebugger(array $array)
+    {
+        $debug=getenv('debug');
+        $returnContents="";
+        if($debug){
+            $returnContents=print_r($array,true);
+        }
+        return $returnContents;
+    }
+    public function setEmailDisplay(string $email)
+    {
+        $splits=explode("@",$email);
+        return "**@".$splits[1];
+    }
+    public function writeLogs()
+    {
+        $debug=getenv('debug');
+        if($debug){
+            $dte=date("H:i:s");
+            $fl="page.log";
+            $contents="\n\n{pageArray}\n============\n";
+            $contents.=print_r($this->pageArray,true);
+            $contents.="\n===ToDos ($dte)===\n";
+            $contents.=implode("\n",$this->ToDo);
+            file_put_contents($fl,$contents);
+        }
+        return;
+    }
+}
