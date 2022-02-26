@@ -11,10 +11,6 @@
     code/pwabuilder-sw.js
 
 
-
-
-    Cahnges here
-
 ## you need to have an API key:
 request this from wayne.h.philip@gmail.com
 
