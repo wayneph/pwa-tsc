@@ -8,11 +8,36 @@ class Present extends BL
     private $myName="switch";
     public function __construct()
     {
-        $this->trace[]="({$this->myName}/php)::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b> @".date("H:i:s");
-        parent::__construct($this->myName);
-        parent::executeAPICalls();
-        parent::getHTML(); // gives $this->html - also does replaces
+        parent::__construct();
+        parent::evalCookie();
+        /* set api Vars */
+        $this->pageArray['apiVars']['getPage']=$this->myName;
+        $this->pageArray['apiCalls'][]='getPage';
+        $this->pageArray['apiCalls'][]='getAllEntityTypes';
         parent::evalInputs();
+        if(count($this->pageArray['cookie'])>1){
+            if(isset($this->pageArray['cookie']['cSiteValidation'])){
+                if($this->pageArray['cookie']['cSiteValidation']==1){
+                    $this->pageArray['apiCalls'][]='setUserLogin';
+                    $this->trace[]="method::CookieIsSet<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
+                }
+                $this->trace[]="WTF::method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
+            }
+        }
+        if(count($this->pageArray['inputs']['posts'])>1){
+            $this->pageArray['apiCalls'][]="setTouchData";
+            $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
+        }
+        parent::executeAPICalls();
+        if(isset($this->pageArray['page']['apiFindUser']['data'])){
+            parent::writeCookie($this->pageArray['page']['apiFindUser']['data']['data']);
+        }
+        parent::buildEntityTypesMenu();;
+        $this->html =file_get_contents("templates/{$this->pageArray['page']['page']['hddr_template']}");
+        $this->html.=file_get_contents("templates/{$this->pageArray['page']['page']['body_template']}");
+        $this->html.=file_get_contents("templates/{$this->pageArray['page']['page']['footer_template']}");
+        parent::replaceSiteStatics();
+        parent::replacePageElements();
         $this->html=str_replace("###title###",$this->pageArray['page']['page']['title'],$this->html);
         $this->html=str_replace("###specificHeader###",$this->pageArray['postSwitchElements']['specificHeader'],$this->html);
         $this->html=str_replace("###header###",$this->pageArray['postSwitchElements']['heading'],$this->html);
