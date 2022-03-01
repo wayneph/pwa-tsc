@@ -20,11 +20,15 @@ class BL
     public $ToDo=array();
     public $trace;
     public $cookiePin="";
+    public $moreEntitiesExist;
     public $authenticated=0;
     public function __construct(string $pageName)
     {
         $this->getEnv();
         $this->evalCookie();
+        if(isset($_SERVER['PATH_INFO'])){
+            $this->getInfoPathArray($_SERVER['PATH_INFO']);
+        }
         $this->pageArray['apiVars']['getPage']=$pageName;
         $this->pageArray['touchForm']="loginForm";
         $this->pageArray['touchOptions']="Register & Login Here";
@@ -32,6 +36,10 @@ class BL
         $this->pageArray['apiCalls'][]='getPage';
         $this->pageArray['apiCalls'][]='getAllEntityTypes';
         $this->pageArray['apiCalls'][]='getMessages';
+        if(substr($pageName,0,4)=="show"){
+            $this->pageArray['apiCalls'][]='getEntitiesForType';
+            //next 1 here
+        }
         $this->pageArray['emailText']="UUM-<input name=\"pstMail\" placeholder=\"Email\" type=\"text\" value=\"###emailAddress###\">";
         $this->pageArray['email']="UUM-eMail";
         $this->pageArray['person']="UUM-Name";
@@ -44,8 +52,21 @@ class BL
         }
         $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
     }
+    public function buildEntitiesPagination(string $caller)
+    {
+        $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
+        $defaultSize=getenv("defaultPageSize");
+        $slug=$this->infoPathArray['slug'];
+        $page=(int)$this->infoPathArray['page']+1;
+        if($this->moreEntitiesExist==1){
+            $slug=$this->infoPathArray['slug'];
+            return "<a href=\"$caller.php/$slug/$page/$defaultSize\">&rarr; Next $defaultSize ###entityType###</a>";
+        }
+        return "<a href=\"$caller.php/$slug/1/$defaultSize\">&larr; First $defaultSize ###entityType###</a>";
+    }
     public function buildEntityListsAccordion()
     {
+        $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
         $entitiesList=$this->pageArray['entitiesList'];
         $outPutHtml="<!-- plGenerated::".__METHOD__."::line::".__LINE__."  -->";
         $htmlTemplate="\n<button class=\"accordion\">##heading## Information</button>\n
@@ -53,14 +74,11 @@ class BL
           <p>\n
             <br>
             <ul>\n
-                <li>
-                    See <b>All Information &amp; Related Items</b> for &rarr; <a href=\"entityInfoAll.php/##slug##/all\">##heading##</a>\n
-                </li>
                 <li>\n
-                    See Only <b>Information Items</b> on &rarr; <a href=\"entityInfo.php/##slug##/info\">##heading##</a>\n
+                    See <b>Information Items</b> for &rarr; <a href=\"entityInfo.php/##slug##/info\">##heading##</a>\n
                 </li>
                 <li>
-                    See Only <b>Related Items</b> for &rarr; <a href=\"entityInfo.php/##slug##/relate\">##heading##</a>\n
+                    See <b>Related Items</b> to or from &rarr; <a href=\"entityInfo.php/##slug##/relate\">##heading##</a>\n
                 </li>\n
             </ul>
           </p>\n
@@ -105,14 +123,6 @@ class BL
         }
         $this->addedMenu.="\n</ul>\n</li>\n";
     }
-    private function deleteCookie()
-    {
-        $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
-        $this->pageArray['cookie']['deleted']=1;
-        $cookieName=getenv("siteSlug")."-pwa";
-        setcookie($cookieName, json_encode($this->pageArray['cookie']), time() + (-3* 86400 * 30), "/");
-        return;
-    }
     public function buildMessages(array $messages)
     {
         $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
@@ -148,6 +158,16 @@ class BL
         }
         return $returnString;
     }
+
+    private function deleteCookie()
+    {
+        $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
+        $this->pageArray['cookie']['deleted']=1;
+        $cookieName=getenv("siteSlug")."-pwa";
+        setcookie($cookieName, json_encode($this->pageArray['cookie']), time() + (-3* 86400 * 30), "/");
+        return;
+    }
+
     public function executeAPICalls()
     {
         $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
@@ -203,6 +223,7 @@ class BL
                     $this->apiLogInOwner();
                     $response=$this->apiGetEntitiesForType();
                     $data=json_decode($response['body'],true);
+                    $this->moreEntitiesExist=$data['moreRecordsExist'];
                     $this->pageArray['entitiesList']=$data['data'];
                     $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
                     break;
@@ -630,10 +651,12 @@ class BL
         date_default_timezone_set(getenv('tz'));
         return;
     }
-    public function getInfoPathArray(string $path)
+
+    private function getInfoPathArray(string $path)
     {
         $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
         $pathExploded=explode("/",$path);
+        //echo("<br>Array:pageArray(".__LINE__."({$this->myName}))<br><pre>"); print_r($pathExploded); echo("</pre><hr>");
         $defaultPageSize=getenv("defaultPageSize");
         $this->infoPathArray['slug']=$pathExploded[1];
         $this->infoPathArray['page']=1;
@@ -739,7 +762,7 @@ class BL
                         }
                         break;
                     default:
-                        $replaceWith="FUBAR";
+                        $this->pushToErrorPage(__METHOD__,$elementsArray[$e]);
                         break;
                 }
             }
