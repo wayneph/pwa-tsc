@@ -1,10 +1,7 @@
 <?php namespace presentation;
 $file=$_SERVER['DOCUMENT_ROOT']."/include/appControl/Bl.php";
 include_once($file);
-$file=$_SERVER['DOCUMENT_ROOT']."/include/pl.php";
-include_once($file);
 use BL\BL;
-use presentationLogic\Pl as PL;
 class Present extends BL
 {
     private $myName="index";

@@ -17,6 +17,8 @@ class Present extends BL
         $this->html=str_replace("###addedStyles###",$this->pageArray['page']['page']['styles_added'],$this->html);
         $this->html=str_replace("###softSubMenus###",$this->addedMenu,$this->html);
         $this->html=str_replace("###postsDetailCondition###",$postsDetailCondition,$this->html);
+        $this->html=str_replace("###touchUs###","<!--..-->",$this->html);
+        $this->html=str_replace("###feedback###","<!--..-->",$this->html);
         $this->html=str_replace("###myName###",$this->myName,$this->html);
         $dBug=parent::setDebugger($this->pageArray['cookie']);
         $this->html=str_replace("###debugger###",$dBug,$this->html);

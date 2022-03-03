@@ -36,9 +36,18 @@ class BL
         $this->pageArray['apiCalls'][]='getPage';
         $this->pageArray['apiCalls'][]='getAllEntityTypes';
         $this->pageArray['apiCalls'][]='getMessages';
-        if(substr($pageName,0,4)=="show"){
-            $this->pageArray['apiCalls'][]='getEntitiesForType';
-            //next 1 here
+        /* page specifics */
+        switch ($pageName) {
+            case "showEntitiesForType":
+                $this->pageArray['apiCalls'][]='getEntitiesForType';
+                break;
+            case "entityInfo":
+                $this->pageArray['apiCalls'][]='getEntityInfo';
+                break;
+            break;
+            case "entityRelate":
+                $this->pageArray['apiCalls'][]='getEntityRelate';
+                break;
         }
         $this->pageArray['emailText']="UUM-<input name=\"pstMail\" placeholder=\"Email\" type=\"text\" value=\"###emailAddress###\">";
         $this->pageArray['email']="UUM-eMail";
@@ -63,6 +72,20 @@ class BL
             return "<a href=\"$caller.php/$slug/$page/$defaultSize\">&rarr; Next $defaultSize ###entityType###</a>";
         }
         return "<a href=\"$caller.php/$slug/1/$defaultSize\">&larr; First $defaultSize ###entityType###</a>";
+    }
+    public function buildEntityInfoAccordion()
+    {
+        $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
+        $info=$this->pageArray['entitiesInfo'][0]['info'];
+        $outPutHtml="<!-- plGenerated::".__METHOD__."::line::".__LINE__."  -->";
+        $htmlTemplate="<p>##infoInternal##</p>\n";
+        for($i=0;$i<count($info);$i++){
+            $itemHtml = $htmlTemplate;
+            $infoInternal="{$info[$i]['infoCategory']}&nbsp;&rarr;&nbsp;<b>{$info[$i]['info']}</b>";
+            $itemHtml = str_replace("##infoInternal##",$infoInternal,$itemHtml);
+            $outPutHtml.=$itemHtml;
+        }
+        return $outPutHtml;
     }
     public function buildEntityListsAccordion()
     {
@@ -171,6 +194,7 @@ class BL
     public function executeAPICalls()
     {
         $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
+        //echo("<br>Array:pageArray(".__LINE__."({$this->myName}))<br><pre>"); print_r($this->pageArray['apiCalls']); echo("</pre><hr>");
         $this->apiArray=array();
         $this->apiArray['apiExecuteStart']=time();
         $this->apiArray['caller']=getenv("api-host");
@@ -189,6 +213,21 @@ class BL
         $cnt=count($this->pageArray['apiCalls']);
         for($a=0;$a<$cnt;$a++){
             switch ($this->pageArray['apiCalls'][$a]){
+                case 'getEntityRelate':
+                    $this->apiLogInOwner();
+                    $response=$this->apiGetEntityRelate();
+                    $data=json_decode($response['body'],true);
+                    $this->moreEntitiesExist=$data['moreRecordsExist'];
+                    $this->pageArray['entitiesList']=$data['data'];
+                    $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
+                    break;
+                case 'getEntityInfo':
+                    $this->apiLogInOwner();
+                    $response=$this->apiGetEntityInfo();
+                    $data=json_decode($response['body'],true);
+                    $this->pageArray['entitiesInfo']=$data['data'];
+                    $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
+                    break;
                 case 'getPage':
                     $response=$this->apiGetPage();
                     $data=json_decode($response['body'],true);
@@ -242,6 +281,7 @@ class BL
             }
         }
     }
+
     private function apiFindUser()
     {
         $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
@@ -301,7 +341,36 @@ class BL
             $this->pushToErrorPage(__METHOD__,$endArray);
         }
     }
-
+    private function apiGetEntityInfo()
+    {
+        $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
+        //https://api.skunks.co/entities/tsc/entity/site016/info
+        $slug=$this->infoPathArray['slug'];
+        $started=microtime(true);
+        $client = new GUZ([
+            'headers' => $this->apiArray["headersIn"]
+        ]);
+        try{
+            $link="{$this->apiArray['entitiesUri']}/entity/$slug/info";
+            $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>LinkCalled:$link";
+            $r = $client->request("GET", $link,['http_errors' => true]);
+            $response['body']=$r->getBody()->getContents();
+            $response['status']=$r->getStatusCode();
+            $response['headersOut']=$r->getHeaders();
+            $response['20xMethodCode']=__LINE__;
+            $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
+            $this->apiArray['apiCalls']['apiGetEntitiesForType']['executionTime']=microtime(true)-$started;
+            return $response;
+        } catch (ClientException $e) {
+            $exception = $e->getResponse();
+            $response['body'] = $exception->getBody()->getContents();
+            $response['status'] = $exception->getStatusCode();
+            $response['headersOut'] = $exception->getHeaders();
+            $response['40xBlMethodCode']=__LINE__;
+            $endArray=json_decode($response['body'],true);
+            $this->pushToErrorPage(__METHOD__,$endArray);
+        }
+    }
     private function apiGetEntitiesForType()
     {
         $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
@@ -360,33 +429,6 @@ class BL
             $endArray=json_decode($response['body'],true);
             $this->pushToErrorPage(__METHOD__,$endArray);
         }
-        // $this->apiArray['apiGetMessages']=time();
-        // $slug=getenv('siteSlug');
-        // $arrayPagination=explode("/",$pagination);
-        // $page=$arrayPagination[0];
-        // $size=$arrayPagination[1];
-        // $client = new GUZ([
-        //     'headers' => $this->apiArray["headersIn"]
-        // ]);
-        // try{
-        //     $r = $client->request("GET", $this->apiArray['userUri']."/comms/$slug/?page=$page&size=$size",['http_errors' => true]);
-        //     $response['body']=$r->getBody()->getContents();
-        //     $response['status']=$r->getStatusCode();
-        //     $response['headersOut']=$r->getHeaders();
-        //     $response['20xMethodCode']=__LINE__;
-        // } catch (ClientException $e) {
-        //     $exception = $e->getResponse();
-        //     $response['body'] = $exception->getBody()->getContents();
-        //     $response['dBugAdded']['inBody'] = $this->apiArray['entitiesUri']."/entityTypes}";
-        //     $response['dBugAdded']['inHeader'] = $this->apiArray["headersIn"];
-        //     $response['status'] = $exception->getStatusCode();
-        //     $response['headersOut'] = $exception->getHeaders();
-        //     $response['40xMethodCode']=__LINE__;
-        //     $this->apiEchoError($response,__METHOD__);
-        // }
-        // $this->apiArray['headersIn']['usageToken']=$response['headersOut']['token'][0];
-        // $this->apiArray['apiGetMessages']=time();
-        // return;
     }
 
     private function apiGetOwnerUser()
