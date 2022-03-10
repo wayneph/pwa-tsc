@@ -38,10 +38,6 @@ class BL
         $this->pageArray['apiCalls'][]='getMessages';
         /* page specifics */
         switch ($pageName) {
-            case "switch":
-                $this->evalInputs();
-                $this->pageArray['apiCalls'][]='setTouchData';
-                break;
             case "showEntitiesForType":
                 $this->pageArray['apiCalls'][]='getEntitiesForType';
                 break;
@@ -353,6 +349,11 @@ class BL
             $response['status'] = $exception->getStatusCode();
             $response['headersOut'] = $exception->getHeaders();
             $response['40xMethodCode']=__LINE__;
+            $endArray=$response['body'];
+            if($endArray['status']==404){
+                $this->pushToErrorPage("No Information Data for the User was found","This has been logged");
+            }
+            $this->pushToErrorPage("API error - The api May be down","::".__METHOD__."&nbsp;was called and could not complete");
         }
     }
 
@@ -700,13 +701,15 @@ class BL
         return;
     }
 
-    private function evalInputs()
+    public function evalInputs()
     {
         $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
         $errors=0;
         if(!isset($_POST['pstSource'])){
-            $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
-            $this->pushToErrorPage("message","No capture data set");
+            $errorArray['postSource']="missing - or not set";
+            $errorArray['line']=__LINE__;
+            $outIt=print_r($errorArray,true);
+            $this->pushToErrorPage(__METHOD__."::".__LINE__,$outIt);
         }
         $this->pageArray['inputs']['type']='post';
         $posts=$_POST;
@@ -716,7 +719,7 @@ class BL
         }
         $posts['pstMailValid']=1;
         if(!isset($posts['pstMail'])){
-            $posts['pstMail']="Mail Not set";
+            $posts['pstMail']="Not set";
             $posts['pstMailValid']=0;
         }
         if (!filter_var($posts['pstMail'], FILTER_VALIDATE_EMAIL)) {
@@ -931,7 +934,8 @@ class BL
         $this->trace[]="method::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
         if(!isset($this->pageArray['appUser'])){
            $this->trace[]="ToDo::<b>".__METHOD__."</b>->Line::<b>".__LINE__."</b>";
-           header("index.php",301);
+           $this->pushToErrorPage(__METHOD__."::".__LINE__, "App user Not set");
+
         }
         if(($this->pageArray['appUser']['status']<4) AND ($this->pageArray['appUser']['status']>0)){
             /*  1=skunks access
@@ -1055,9 +1059,9 @@ class BL
         $outArray['toDos']=$this->ToDo;
         $contents= json_encode($outArray);
         file_put_contents($fl,$contents);
-        // if($debug==1){
-        //     file_put_contents($flAdded, $contents);
-        // }
+        if($debug==0){
+            file_put_contents($flAdded, $contents);
+        }
         return;
     }
 
