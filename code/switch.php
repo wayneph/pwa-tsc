@@ -12,7 +12,6 @@ class Present extends BL
         parent::__construct($this->myName);
         parent::executeAPICalls();
         parent::getHTML(); // gives $this->html - also does replaces
-        parent::evalInputs();
         $this->html=str_replace("###title###",$this->pageArray['page']['page']['title'],$this->html);
         $this->html=str_replace("###specificHeader###",$this->pageArray['postSwitchElements']['specificHeader'],$this->html);
         $this->html=str_replace("###header###",$this->pageArray['postSwitchElements']['heading'],$this->html);
